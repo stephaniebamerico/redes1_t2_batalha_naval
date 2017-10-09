@@ -39,10 +39,10 @@ public class TokenRing {
 					String msg = new String(packet.getData(), packet.getOffset(), packet.getLength());
 					
 					// Treats the message
-					System.out.println("Recebido em "+my_port+": "+msg);
 					if(Integer.parseInt(msg.split(";")[1]) == id) {
 						// The message is for me
 						System.out.println("A mensagem é para mim!!");
+						Game.treatMessage(msg);
 					}
 					else {
 						System.out.println("A mensagem não é para mim, passando adiante...");
