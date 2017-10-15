@@ -2,5 +2,8 @@
 public enum Cell {
 	WATER,
 	SHIP,
-	UNKNOWN;
+	UNKNOWN,
+	SUNK0,
+	SUNK1,
+	SUNK2;
 }
