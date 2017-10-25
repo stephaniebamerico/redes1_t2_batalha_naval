@@ -43,7 +43,7 @@ public class TokenRing {
 					// Treats the message
 					if(Integer.parseInt(mensagem[1]) == my_id && !Game.getGameStatus()) {
 						// The message is for me
-						System.out.println("[listener] Recebido por player "+TokenRing.getMyId()+": "+msg);
+						//System.out.println("[listener] Recebido por player "+TokenRing.getMyId()+": "+msg);
 						Game.addBufferMessage(msg);
 					}
 					else if(Integer.parseInt(mensagem[0]) == my_id && Integer.parseInt(mensagem[2]) == 1) {
@@ -66,7 +66,7 @@ public class TokenRing {
 			
 		try {
 			socketSpeaker = new DatagramSocket();
-			System.out.println("[speaker] Enviando: "+msg);
+			//System.out.println("[speaker] Enviando: "+msg);
 			
 			// Send the message
 			send_msg = msg.getBytes();

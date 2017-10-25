@@ -41,16 +41,21 @@ public class Player {
 		return boards[player].cells[coordinates.x][coordinates.y];		
 	}
 	
+	public static boolean isActive(int id_player) {
+		return activePlayers[id_player];
+	}
+	
 	public static int nextAvaible() {
 		int next = id;
 		for (int player = 1; player < activePlayers.length; player++) {
 			next = (id+player)%activePlayers.length;
+			//System.err.println("activePlayers["+next+"]: "+activePlayers[next]);
 			if(activePlayers[next]) {
-				System.err.println("meu id: "+(id+1)+" prox: "+(next+1));
+				//System.err.println("meu id: "+(id+1)+" prox: "+(next+1));
 				return (next+1);
 			}
 		}
-		return id;
+		return (id+1);
 	}
 	
 	public void setBoardCell(int player, Point coordinates, Cell status) {
@@ -91,7 +96,6 @@ public class Player {
 		}
 		else
 			result = "0,0,0,0,0,0,0;";
-		System.out.println("[result] "+result);
 		return result;
 	}
 	
@@ -110,7 +114,7 @@ public class Player {
 		System.out.println();
 		boards[player].printBoard();
 		if(sunkenShips[player] == 2) {
-			System.out.println("Jogador"+(player+1)+" teve todos seus navios afundados e está fora do jogo.");
+			System.out.println("Jogador "+(player+1)+" teve todos seus navios afundados e está fora do jogo.");
 			activePlayers[player] = false;
 		}
 	}

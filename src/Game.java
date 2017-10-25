@@ -15,10 +15,11 @@ public class Game {
 	private static Player player;
 	private static boolean gameOver, myTurn;
 	private static ArrayList<String> bufferMessages;
+	public static Scanner input;
 	
 	private static void init_game(Point[][] ships) {
 		bufferMessages = new ArrayList<String>();
-		
+		input = new Scanner(System.in);
 		/* Start Network configuration */
 		// Find ip address
 		InetAddress my_ip = TokenRing.getLocalIP(), next_ip = null;
@@ -64,7 +65,7 @@ public class Game {
 	public static void main(String[] args) {
 		int id_target;
 		Point coordinates = new Point();
-		Scanner input = new Scanner(System.in);
+		//Scanner input = new Scanner(System.in);
 		
 		// TODO: correctly read the position of the ships
 		Point[][] navios = new Point[2][3];
@@ -121,13 +122,14 @@ public class Game {
 	}
 	
 	public static void gameOver(){
+		System.out.println("GAME OVER");
 		gameOver = true;
 	}
 	
-	// TODO: verificar se mensagens chegam	
 	public static void nextTurn() {
 		// Origem; Destino; AKI; 0;
 		int next = Player.nextAvaible();
+		//System.out.println("[nextTurn] Next avalible: "+next);
 		if(next == TokenRing.getMyId()) {
 			System.out.println("Você venceu!!!");
 			gameOver();
@@ -153,7 +155,7 @@ public class Game {
 		//  Origem; Destino; AKI; 2; X; Y; Resultado; Afundou, X_1, Y_1, X_2, Y_2, X_3, Y_3; Alvo;
 		String msg = null;
 		for (int player = 1; player <= 4; player++) {
-			if(player != TokenRing.getMyId() && player != target) {
+			if(player != TokenRing.getMyId() && player != target && Player.isActive(player-1)) {
 				msg = TokenRing.getMyId()+";"+player+";0;2;"+coordinates.x+";"+coordinates.y+";"
 						+result+";"+sank+";"+target+";";
 				network.speaker(true, msg);
@@ -196,16 +198,15 @@ public class Game {
 					Integer.parseInt(mensagem[5]));
 			player.setBoardCell(target-1, coordinates, result);
 			
+			boolean origin_me = false;
 			if(Integer.parseInt(mensagem[0]) == TokenRing.getMyId()) {
-				updateBoard(target, coordinates, result.toString(), mensagem[7]);
-				// Now that you've updated everyone on the outcome of the attack, pass the token
-				nextTurn();
+				updateBoard(target, coordinates, result.toString(), mensagem[7]);	
+				origin_me = true;
 			}
-			 else {
+			else {
 				mensagem[2] = "1"; // AKI flag
 				network.speaker(false, String.join(";", mensagem)+";");
 			}
-			System.out.println("Afundou: "+mensagem[7]);
 			mensagem = mensagem[7].split(","); // Afundou, X_1, Y_1, X_2, Y_2, X_3, Y_3;
 			if(mensagem[0].equals("1")) {
 				Point[] t = new Point[3];
@@ -213,6 +214,11 @@ public class Game {
 					t[i] = new Point(Integer.parseInt(mensagem[x]), Integer.parseInt(mensagem[x+1]));					
 				}
 				player.shipSank(target-1, t);
+			}
+			
+			if(origin_me) {
+				// Now that you've updated everyone on the outcome of the attack, pass the token
+				nextTurn();
 			}
 		}			
 		else {
