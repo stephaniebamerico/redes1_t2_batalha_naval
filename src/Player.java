@@ -34,7 +34,6 @@ public class Player {
 				boards[id].cells[shipsCoordinates[i][j].x][shipsCoordinates[i][j].y] = Cell.SHIP;
 			}
 		}
-		boards[id].printBoard();
 	}
 	
 	public static Cell getCell(int player, Point coordinates) {
@@ -49,9 +48,7 @@ public class Player {
 		int next = id;
 		for (int player = 1; player < activePlayers.length; player++) {
 			next = (id+player)%activePlayers.length;
-			//System.err.println("activePlayers["+next+"]: "+activePlayers[next]);
 			if(activePlayers[next]) {
-				//System.err.println("meu id: "+(id+1)+" prox: "+(next+1));
 				return (next+1);
 			}
 		}
@@ -60,7 +57,11 @@ public class Player {
 	
 	public void setBoardCell(int player, Point coordinates, Cell status) {
 		boards[player].cells[coordinates.x][coordinates.y] = status;
-		System.out.println("[Resultado do ataque]");
+		System.out.println("\nResultado do ataque ao Jogador "+(player+1)+":");
+		printBoard(player);
+	}
+	
+	public static void printBoard(int player) {
 		boards[player].printBoard();
 	}
 	
@@ -88,7 +89,7 @@ public class Player {
 			temp += ","+c[i].x+","+c[i].y;
 		if (i == c.length) {
 			result = "1"+temp+";";
-			System.out.println("[getShipStatus] Seu navio foi afundado.");
+			System.out.println("\nSeu navio foi afundado.");
 			if(++sunkenShips[id] == 2) {
 				activePlayers[id] = false;
 				Game.gameOver();
@@ -101,7 +102,7 @@ public class Player {
 	
 	public void shipSank(int player, Point[] coordinates) {
 		++sunkenShips[player];
-		System.out.print("[shipSank] "+sunkenShips[player]+" navio afundou nas coordenadas:");
+		System.out.print("\nSeu navio afundou! Coordenadas do navio:");
 		Cell c = null;
 		if(sunkenShips[player] == 1)
 			c = Cell.SUNK1;
@@ -114,7 +115,7 @@ public class Player {
 		System.out.println();
 		boards[player].printBoard();
 		if(sunkenShips[player] == 2) {
-			System.out.println("Jogador "+(player+1)+" teve todos seus navios afundados e está fora do jogo.");
+			System.out.println("\nJogador "+(player+1)+" teve todos seus navios afundados e está fora do jogo.");
 			activePlayers[player] = false;
 		}
 	}

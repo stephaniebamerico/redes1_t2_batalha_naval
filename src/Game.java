@@ -7,8 +7,8 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-// TODO: test in different ip addresses
-// TODO: verificar se há 4 jogadores na rede
+// TODO: checar se está atacando jogador válido
+// TODO: melhorar mensagens do jogo e acrescentar opção de ver tabuleiro dos jogadores
 // TODO: comentarios em ingles
 public class Game {
 	private static TokenRing network;
@@ -19,7 +19,6 @@ public class Game {
 	
 	private static void init_game(Point[][] ships) {
 		bufferMessages = new ArrayList<String>();
-		input = new Scanner(System.in);
 		/* Start Network configuration */
 		// Find ip address
 		InetAddress my_ip = TokenRing.getLocalIP(), next_ip = null;
@@ -40,7 +39,7 @@ public class Game {
 	        }
 	        
 	        player_id = Integer.parseInt(line.split(" ")[1]);
-	        System.out.println("[init_game] id do jogador: "+player_id);
+	        System.out.println("Seu Id: "+player_id);
 	        
 	        // Find the next player's ip address
 	        if ((line = buffer.readLine()) != null) {
@@ -65,17 +64,19 @@ public class Game {
 	public static void main(String[] args) {
 		int id_target;
 		Point coordinates = new Point();
-		//Scanner input = new Scanner(System.in);
+		input = new Scanner(System.in);
 		
-		// TODO: correctly read the position of the ships
 		Point[][] navios = new Point[2][3];
-		navios[0][0] = new Point(0,0);
-		navios[0][1] = new Point(1,0);
-		navios[0][2] = new Point(2,0);
-		
-		navios[1][0] = new Point(1,2);
-		navios[1][1] = new Point(1,3);
-		navios[1][2] = new Point(1,4);
+		System.out.println("Entre com as 3 coordenadas (adjacentes) de dois navios (1 - 5): ");
+		System.out.println("Exemplo de entrada: 1 5 2 5 3 5 2 1 2 2 2 3");
+		for (int i = 0; i < 2; i++) {	
+			for (int j = 0; j < 3; j++) {
+				coordinates.x = input.nextInt()-1;
+				coordinates.y = input.nextInt()-1;
+				navios[i][j] = new Point(coordinates.x, coordinates.y);
+			}
+			System.out.println();
+		}
 		
 		init_game(navios);
 				
@@ -94,18 +95,19 @@ public class Game {
 					treatMessage(bufferMessages.remove(0));
 				}
 				if(myTurn) {
+					System.out.println("\n[Iniciando turno de ataque]");
+					imprimeTabuleiros();
 					
-					System.out.println("[Iniciando turno de ataque]");
-					
-					System.out.println("Entre com o id do jogador alvo: ");
+					System.out.println("\nEntre com o Id do Jogador alvo: ");
 					id_target = input.nextInt();
 					
-					System.out.println("Entre com as coordenadas da célula alvo: ");
-					coordinates.x = input.nextInt();
-					coordinates.y = input.nextInt();
+					System.out.println("\nEntre com as coordenadas da célula alvo (1 - 5): ");
+					System.out.println("Exemplo de entrada: 1 3");
+					coordinates.x = input.nextInt()-1;
+					coordinates.y = input.nextInt()-1;
 					
 					attack(id_target, coordinates);
-					System.out.println("[Turno de ataque encerrado]");
+					System.out.println("\n[Turno de ataque encerrado]");
 					myTurn = false;
 				}
 				
@@ -122,16 +124,25 @@ public class Game {
 	}
 	
 	public static void gameOver(){
-		System.out.println("GAME OVER");
+		System.out.println("\n\nGAME OVER");
 		gameOver = true;
 	}
 	
+	public static void imprimeTabuleiros() {
+		System.out.println("Seu tabuleiro (Id: "+TokenRing.getMyId()+"):");
+		Player.printBoard(TokenRing.getMyId()-1);
+		for (int i = 0; i < 4; i++) {
+			if(i != (TokenRing.getMyId()-1) && Player.isActive(i)) {
+				System.out.println("\nTabuleiro do Jogador "+(i+1)+":");
+				Player.printBoard(i);
+			}
+		}
+	}
+	
 	public static void nextTurn() {
-		// Origem; Destino; AKI; 0;
 		int next = Player.nextAvaible();
-		//System.out.println("[nextTurn] Next avalible: "+next);
 		if(next == TokenRing.getMyId()) {
-			System.out.println("Você venceu!!!");
+			System.out.println("\n\nVocê venceu!!!");
 			gameOver();
 		}
 		else {
@@ -141,8 +152,9 @@ public class Game {
 	}
 	
 	public static void attack(int id_target, Point coordinates) {
-		// Origem; Destino; AKI; 1; X; Y; Resultado; Afundou, X_1; Y_1; X_2, Y_2, X_3, Y_3;
-		if(Player.getCell(id_target-1, coordinates) == Cell.UNKNOWN) {
+		if((id_target < 4 && id_target >= 0) && 
+				(coordinates.x < 5 && coordinates.x >= 0 && coordinates.y < 5 && coordinates.y >= 0) &&
+				Player.getCell(id_target-1, coordinates) == Cell.UNKNOWN && Player.isActive(id_target-1)) {
 			String msg = new String(TokenRing.getMyId()+";"+id_target+";0;1;"
 					+coordinates.x+";"+coordinates.y+";0;0,0,0,0,0,0,0;");
 			network.speaker(true, msg);
@@ -152,7 +164,6 @@ public class Game {
 	}
 	
 	public static void updateBoard(int target, Point coordinates, String result, String sank) {
-		//  Origem; Destino; AKI; 2; X; Y; Resultado; Afundou, X_1, Y_1, X_2, Y_2, X_3, Y_3; Alvo;
 		String msg = null;
 		for (int player = 1; player <= 4; player++) {
 			if(player != TokenRing.getMyId() && player != target && Player.isActive(player-1)) {
@@ -167,8 +178,7 @@ public class Game {
 		bufferMessages.add(msg);
 	}
 	
-	public static void treatMessage(String msg) {		
-		// Message: Origem; Destino; AKI; Operação; <Parâmetros>;
+	public static void treatMessage(String msg) {
 		String[] mensagem = msg.split(";");
 		if(mensagem.length < 4) {
 			System.err.println("[treatMessage] Mensagem recebida inválida: tamanho inválido.");
@@ -204,7 +214,7 @@ public class Game {
 				origin_me = true;
 			}
 			else {
-				mensagem[2] = "1"; // AKI flag
+				mensagem[2] = "1"; // ACK flag
 				network.speaker(false, String.join(";", mensagem)+";");
 			}
 			mensagem = mensagem[7].split(","); // Afundou, X_1, Y_1, X_2, Y_2, X_3, Y_3;
@@ -223,23 +233,28 @@ public class Game {
 		}			
 		else {
 			switch(mensagem[3]) {
-			case "0": // Received token: Origin; Destino; AKI; 0;
-				mensagem[2] = "1"; // AKI flag
+			case "0": // Received token: Origin; Destino; ACK; 0;
+				mensagem[2] = "1"; // ACK flag
 				msg = String.join(";", mensagem)+";";
 				network.speaker(false, msg);
 				
 				myTurn = true;
 				break;
-			case "1": // Origem; Destino; AKI; 1; X; Y; Resultado, Afundou, X_1, Y_1, X_2, Y_2, X_3, Y_3;
-				mensagem[2] = "1"; // AKI flag
+			case "1": // Origem; Destino; ACK; 1; X; Y; Resultado, Afundou, X_1, Y_1, X_2, Y_2, X_3, Y_3;
+				mensagem[2] = "1"; // ACK flag
 				Point coordinates = new Point(Integer.parseInt(mensagem[4]),
 						Integer.parseInt(mensagem[5]));
+				
 				mensagem[6] = player.getResult(coordinates); // Result flag
 				if(mensagem[6].equals(Cell.SHIP.toString())) {
 					// Hit the ship
 					mensagem[7] = player.getShipStatus(coordinates);
-					System.out.println("[treatMessage] Navio nas coordenadas ("+coordinates.x+","+coordinates.y+") foi atingido.");
+					System.out.println("\nVocê sofreu um ataque do Jogador "+(Integer.parseInt(mensagem[0])+1)+
+					" e o navio na coordenada ("+(coordinates.x+1)+","+(coordinates.y+1)+") foi atingido.");
 				}
+				else
+					System.out.println("\nVocê foi atacado pelo Jogador "+(Integer.parseInt(mensagem[0])+1)+
+							" na coordenada ("+(coordinates.x+1)+", "+(coordinates.y+1)+"), mas nenhum navio foi atingido.");
 				
 				msg = String.join(";", mensagem);
 				network.speaker(false, msg);
