@@ -17,7 +17,7 @@ public class Game {
 	private static ArrayList<String> bufferMessages;
 	public static Scanner input;
 	
-	private static void init_game(Point[][] ships) {
+	private static void init_game() {
 		bufferMessages = new ArrayList<String>();
 		/* Start Network configuration */
 		// Find ip address
@@ -53,8 +53,6 @@ public class Game {
 	        next_ip = InetAddress.getByName(line);
 	        buffer.close();
 	    } catch (IOException e) {e.printStackTrace();}
-				
-		player = new Player(player_id-1, ships);
 		
 		next_id = (player_id+1)%5 + (player_id+1)/5;
 		network = new TokenRing(player_id, next_id, next_ip);
@@ -65,6 +63,8 @@ public class Game {
 		int id_target;
 		Point coordinates = new Point();
 		input = new Scanner(System.in);
+		
+		init_game();
 		
 		Point[][] navios = new Point[2][3];
 		System.out.println("Entre com as 3 coordenadas (adjacentes) de dois navios (1 - 5): ");
@@ -78,13 +78,14 @@ public class Game {
 			System.out.println();
 		}
 		
-		init_game(navios);
+		player = new Player(TokenRing.getMyId()-1, navios);
 				
 		if(TokenRing.getMyId() == 1)
 			myTurn = true;
-		else
+		else {
 			myTurn = false;
-		
+			System.out.println("Aguarde...");
+		}
 		// Starts listening on the network
 		network.listener();
 		
@@ -152,15 +153,18 @@ public class Game {
 	}
 	
 	public static void attack(int id_target, Point coordinates) {
-		if((id_target < 4 && id_target >= 0) && 
+		if((id_target <= 4 && id_target >= 1) && 
 				(coordinates.x < 5 && coordinates.x >= 0 && coordinates.y < 5 && coordinates.y >= 0) &&
-				Player.getCell(id_target-1, coordinates) == Cell.UNKNOWN && Player.isActive(id_target-1)) {
+				Player.getCell(id_target-1, coordinates) == Cell.UNKNOWN && Player.isActive(id_target-1)
+				&& id_target != TokenRing.getMyId()) {
 			String msg = new String(TokenRing.getMyId()+";"+id_target+";0;1;"
 					+coordinates.x+";"+coordinates.y+";0;0,0,0,0,0,0,0;");
 			network.speaker(true, msg);
 		}
-		else
+		else {
 			nextTurn();
+			System.out.println("\nJogada invalida, perdeu a vez.\nAguarde...");
+		}
 	}
 	
 	public static void updateBoard(int target, Point coordinates, String result, String sank) {
@@ -249,13 +253,12 @@ public class Game {
 				if(mensagem[6].equals(Cell.SHIP.toString())) {
 					// Hit the ship
 					mensagem[7] = player.getShipStatus(coordinates);
-					System.out.println("\nVocê sofreu um ataque do Jogador "+(Integer.parseInt(mensagem[0])+1)+
+					System.out.println("\nVocê sofreu um ataque do Jogador "+(Integer.parseInt(mensagem[0]))+
 					" e o navio na coordenada ("+(coordinates.x+1)+","+(coordinates.y+1)+") foi atingido.");
 				}
 				else
-					System.out.println("\nVocê foi atacado pelo Jogador "+(Integer.parseInt(mensagem[0])+1)+
+					System.out.println("\nVocê foi atacado pelo Jogador "+(Integer.parseInt(mensagem[0]))+
 							" na coordenada ("+(coordinates.x+1)+", "+(coordinates.y+1)+"), mas nenhum navio foi atingido.");
-				
 				msg = String.join(";", mensagem);
 				network.speaker(false, msg);
 				break;
@@ -265,5 +268,6 @@ public class Game {
 				break;
 			}
 		}
+		System.out.println("\nAguarde...");
 	}
 }

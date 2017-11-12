@@ -102,20 +102,19 @@ public class Player {
 	
 	public void shipSank(int player, Point[] coordinates) {
 		++sunkenShips[player];
-		System.out.print("\nSeu navio afundou! Coordenadas do navio:");
+		System.out.print("\nUm navio do Jogador "+(player+1)+" afundou! Coordenadas do navio: ");
 		Cell c = null;
 		if(sunkenShips[player] == 1)
 			c = Cell.SUNK1;
 		else
 			c = Cell.SUNK2;
 		for (Point shipCoordinates : coordinates) {
-			System.out.print(shipCoordinates.x+", "+shipCoordinates.y+"; ");
+			System.out.print("("+(shipCoordinates.x+1)+", "+(shipCoordinates.y+1)+"); ");
 			boards[player].cells[shipCoordinates.x][shipCoordinates.y] = c;
 		}
 		System.out.println();
-		boards[player].printBoard();
 		if(sunkenShips[player] == 2) {
-			System.out.println("\nJogador "+(player+1)+" teve todos seus navios afundados e está fora do jogo.");
+			System.out.println("\nO Jogador "+(player+1)+" teve todos seus navios afundados e está fora do jogo.");
 			activePlayers[player] = false;
 		}
 	}
